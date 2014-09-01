@@ -63,3 +63,7 @@ node_modules
 
 # Users Environment Variables
 .lock-wscript
+
+#VS files
+obj
+*.dat

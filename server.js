@@ -28,21 +28,31 @@ router.get('/', function(req, res) {
 
 router.get('/cycle', function(req, res) {
 	var location = req.query.location;
-	var airquality = req.query.airquality;
-	var weather = {};
+	var airQuality = req.query.airquality;
 	if (location.length > 0) {
-		var weather = getWeather(location);
+		getWeather(location);
 	}
-	
-	res.json({ location: location, airquality: airquality, weather: weather });	
+    
+    if (airQuality.length > 0) {
+        getAirQuality(airQuality);
+    }
+
+	res.json({ location: location, airquality: airQuality });	
 });
 
 function getWeather(location) {
 	request('http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric', function (error, response, body) {
 		console.log('Looking up weather for ' + location);
-		console.log(response);
+		console.log(response.statusCode + ' ' + body.length + ' bytes');
 	});
 };
+
+function getAirQuality(airQuality) {
+    request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality + '/Json', function (error, response, body) {
+        console.log('Looking up air quality for ' + airQuality);
+        console.log(response.statusCode + ' ' + body.length + ' bytes');
+    });
+}
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api

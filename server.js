@@ -6,6 +6,7 @@
 // call the packages we need
 var express    = require('express'); 		// call express
 var app        = express(); 				// define our app using express
+var request    = require('request');
 
 var port = process.env.PORT || 8080; 		// set our port
 
@@ -22,10 +23,26 @@ router.use(function(req, res, next) {
 
 // test route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function(req, res) {
-	res.json({ message: 'hooray! welcome to our api!' });	
+	res.json({ message: 'hooray! welcome to our cycle api!' });	
 });
 
-router.route('/cycle:location:
+router.get('/cycle', function(req, res) {
+	var location = req.query.location;
+	var airquality = req.query.airquality;
+	var weather = {};
+	if (location.length > 0) {
+		var weather = getWeather(location);
+	}
+	
+	res.json({ location: location, airquality: airquality, weather: weather });	
+});
+
+function getWeather(location) {
+	request('http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric', function (error, response, body) {
+		console.log('Looking up weather for ' + location);
+		console.log(response);
+	});
+};
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api

@@ -48,9 +48,11 @@ function getWeather(location) {
 };
 
 function getAirQuality(airQuality) {
-    request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality + '/Json', function (error, response, body) {
-        console.log('Looking up air quality for ' + airQuality);
-        console.log(response.statusCode + ' ' + body.length + ' bytes');
+    airQuality.forEach(function(entry) {
+        request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + entry + '/Json', function(error, response, body) {
+            console.log('Looking up air quality for ' + entry);
+            console.log(response.statusCode + ' ' + body.length + ' bytes');
+        });
     });
 }
 

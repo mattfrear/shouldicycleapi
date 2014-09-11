@@ -7,6 +7,7 @@
 var express    = require('express'); 		// call express
 var app        = express(); 				// define our app using express
 var request    = require('request');
+var async      = require('async');
 
 var port = process.env.PORT || 8080; 		// set our port
 
@@ -29,29 +30,44 @@ router.get('/', function(req, res) {
 router.get('/cycle', function(req, res) {
 	var location = req.query.location;
 	var airQuality = req.query.airquality;
-	if (location.length > 0) {
-		getWeather(location);
-	}
-    
-    if (airQuality.length > 0) {
-        getAirQuality(airQuality);
-    }
+	var shouldicycle = {};
 
-	res.json({ location: location, airquality: airQuality });	
+	async.parallel([
+		// Get weather
+		function(callback) {
+			if (location) {
+				getWeather(location, shouldicycle, callback);
+			}
+		},
+		// Get airquality - todo, use async.forEach instead?
+		function(callback) {
+			if (airQuality) {
+        		getAirQuality(airQuality, shouldicycle, callback);
+    		}
+		}
+	]);
+
+	res.json(shouldicycle);	
 });
 
-function getWeather(location) {
+function getWeather(location, shouldicycle, callback) {
 	request('http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric', function (error, response, body) {
 		console.log('Looking up weather for ' + location);
 		console.log(response.statusCode + ' ' + body.length + ' bytes');
+		if (error) return callback(error);
+		shouldicycle.temp = 'todo';
+		callback();
 	});
 };
 
-function getAirQuality(airQuality) {
+function getAirQuality(airQuality, shouldicycle, callback) {
     airQuality.forEach(function(entry) {
         request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + entry + '/Json', function(error, response, body) {
             console.log('Looking up air quality for ' + entry);
             console.log(response.statusCode + ' ' + body.length + ' bytes');
+    		if (error) return callback(error);
+			shouldicycle.airQuality = 'todo';
+			callback();
         });
     });
 }

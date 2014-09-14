@@ -29,8 +29,9 @@ router.get('/', function(req, res) {
 
 router.get('/cycle', function(req, res) {
 	var location = req.query.location;
-	var airQuality = req.query.airquality;
+	var airQualities = req.query.airquality;
 	var shouldicycle = {};
+	shouldicycle.pollution = [];
 
 	async.parallel([
 		// Get weather
@@ -39,21 +40,26 @@ router.get('/cycle', function(req, res) {
 				getWeather(location, shouldicycle, callback);
 			}
 		},
-		// Get airquality - todo, use async.forEach instead?
+		// Get airquality
 		function(callback) {
-			if (airQuality) {
-        		getAirQuality(airQuality, shouldicycle, callback);
+			if (airQualities) {
+				var airQualityArray = airQualities.split(',');
+				async.forEach(airQualityArray, function(airQuality, callback) {
+	        		getAirQuality(airQuality, shouldicycle, callback);
+				}, callback)
     		}
 		}
-	]);
-
-	res.json(shouldicycle);	
+	], 
+	// This is called when weather and airquality are done
+	function(err) {
+		if (err) return next(err);
+		res.json(shouldicycle);	
+	});
 });
 
 function getWeather(location, shouldicycle, callback) {
 	request('http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric', function (error, response, body) {
-		console.log('Looking up weather for ' + location);
-		console.log(response.statusCode + ' ' + body.length + ' bytes');
+		console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length + ' bytes');
 		if (error) return callback(error);
 		shouldicycle.temp = 'todo';
 		callback();
@@ -61,14 +67,11 @@ function getWeather(location, shouldicycle, callback) {
 };
 
 function getAirQuality(airQuality, shouldicycle, callback) {
-    airQuality.forEach(function(entry) {
-        request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + entry + '/Json', function(error, response, body) {
-            console.log('Looking up air quality for ' + entry);
-            console.log(response.statusCode + ' ' + body.length + ' bytes');
-    		if (error) return callback(error);
-			shouldicycle.airQuality = 'todo';
-			callback();
-        });
+    request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json', function(error, response, body) {
+        console.log('Air quality for ' + airQuality + ' ' + response.statusCode + ' ' + body.length + ' bytes');
+		if (error) return callback(error);
+		shouldicycle.pollution.push({ airQuality : 'todo'});
+		callback();
     });
 }
 

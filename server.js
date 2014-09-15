@@ -6,8 +6,6 @@
 // call the packages we need
 var express    = require('express'); 		// call express
 var app        = express(); 				// define our app using express
-var request    = require('request');
-var async      = require('async');
 var request    = require('request');        // https://github.com/mikeal/request
 var async      = require('async');          // http://www.sebastianseilund.com/nodejs-async-in-practice
 
@@ -75,11 +73,17 @@ function getWeather(location, shouldicycle, callback) {
 };
 
 function getAirQuality(airQuality, shouldicycle, callback) {
-    request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json', function(error, response, body) {
-        console.log('Air quality for ' + airQuality + ' ' + response.statusCode + ' ' + body.length + ' bytes');
+    var url = 'http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json';
+
+    request({ uri : url, json : true}, function(error, response, body) {
+        // console.log('Air quality for ' + airQuality + ' ' + response.statusCode + ' ' + JSON.stringify(body));
 		if (error) return callback(error);
-        // shouldicycle.pollution.push({ name : body.HourlyAirQualityIndex.LocalAuthority.Site.SiteCode });
-        shouldicycle.pollution.push({ name : airQuality });
+        var site = body.HourlyAirQualityIndex.LocalAuthority.Site;
+        site.species.forEach( function(species) {
+        	var pollution = { name : site['@SiteCode'], speciesCode : species['@SpeciesCode'], airQualityIndex : species['@AirQualityIndex'] };
+        	shouldicycle.pollution.push(pollution);
+        });
+        
 		callback();
     });
 }

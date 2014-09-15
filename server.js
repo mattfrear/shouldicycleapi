@@ -39,6 +39,9 @@ router.get('/cycle', function(req, res) {
 			if (location) {
 				getWeather(location, shouldicycle, callback);
 			}
+			else {
+				callback();
+			}
 		},
 		// Get airquality
 		function(callback) {
@@ -47,6 +50,9 @@ router.get('/cycle', function(req, res) {
 				async.forEach(airQualityArray, function(airQuality, callback) {
 	        		getAirQuality(airQuality, shouldicycle, callback);
 				}, callback)
+    		}
+    		else {
+    			callback();
     		}
 		}
 	], 

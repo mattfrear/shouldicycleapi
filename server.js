@@ -6,8 +6,8 @@
 // call the packages we need
 var express    = require('express'); 		// call express
 var app        = express(); 				// define our app using express
-var request    = require('request');
-var async      = require('async');
+var request    = require('request');        // https://github.com/mikeal/request
+var async      = require('async');          // http://www.sebastianseilund.com/nodejs-async-in-practice
 
 var port = process.env.PORT || 8080; 		// set our port
 
@@ -27,7 +27,7 @@ router.get('/', function(req, res) {
 	res.json({ message: 'hooray! welcome to our cycle api!' });	
 });
 
-router.get('/cycle', function(req, res) {
+router.get('/cycle', function(req, res, next) {
 	var location = req.query.location;
 	var airQualities = req.query.airquality;
 	var shouldicycle = {};
@@ -44,10 +44,10 @@ router.get('/cycle', function(req, res) {
 		function(callback) {
 			if (airQualities) {
 				var airQualityArray = airQualities.split(',');
-				async.forEach(airQualityArray, function(airQuality, callback) {
-	        		getAirQuality(airQuality, shouldicycle, callback);
-				}, callback)
-    		}
+			    async.forEach(airQualityArray, function(airQuality, airQualityCallback) {
+			        getAirQuality(airQuality, shouldicycle, airQualityCallback);
+			    }, callback);
+			}
 		}
 	], 
 	// This is called when weather and airquality are done
@@ -59,9 +59,9 @@ router.get('/cycle', function(req, res) {
 
 function getWeather(location, shouldicycle, callback) {
 	request('http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric', function (error, response, body) {
-		console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length + ' bytes');
-		if (error) return callback(error);
-		shouldicycle.temp = 'todo';
+        console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length + ' bytes');
+        if (error) return callback(error);
+        shouldicycle.temp = 'todo';
 		callback();
 	});
 };
@@ -70,7 +70,8 @@ function getAirQuality(airQuality, shouldicycle, callback) {
     request('http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json', function(error, response, body) {
         console.log('Air quality for ' + airQuality + ' ' + response.statusCode + ' ' + body.length + ' bytes');
 		if (error) return callback(error);
-		shouldicycle.pollution.push({ airQuality : 'todo'});
+        // shouldicycle.pollution.push({ name : body.HourlyAirQualityIndex.LocalAuthority.Site.SiteCode });
+        shouldicycle.pollution.push({ name : airQuality });
 		callback();
     });
 }

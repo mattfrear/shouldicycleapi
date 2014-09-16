@@ -64,27 +64,50 @@ router.get('/cycle', function(req, res, next) {
 });
 
 function getWeather(location, shouldicycle, callback) {
-	request('http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric', function (error, response, body) {
-        console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length + ' bytes');
+    var url = 'http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric';
+    request({ uri : url, json : true }, function (error, response, body) {
+        console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length);
         if (error) return callback(error);
-        shouldicycle.temp = 'todo';
+        shouldicycle.city = body.city.name;
+        var closestForecast = calcClosestForecast(body.list);
+        shouldicycle.temp = Math.round(closestForecast.main.temp);
+        shouldicycle.symbol = closestForecast.weather[0].icon;
+        shouldicycle.windDegree = Math.round(closestForecast.wind.deg);
+        shouldicycle.windDirection = "todo";
+        shouldicycle.windSpeed = Math.round(closestForecast.wind.speed);
 		callback();
 	});
 };
 
+function calcClosestForecast(forecasts) {
+    var nowInSeconds = Math.round(Date.now() / 1000);
+    var closest = 0;
+    var closestDiff = Math.abs(nowInSeconds - forecasts[0].dt);
+    for (var i = 1; i < forecasts.length; i++) {
+        var diff = Math.abs(nowInSeconds - forecasts[i].dt);
+        if (diff < closestDiff) {
+            closest = i;
+            closestDiff = diff;
+        }
+    }
+
+    return forecasts[closest];
+}
+
 function getAirQuality(airQuality, shouldicycle, callback) {
     var url = 'http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json';
 
-    request({ uri : url, json : true}, function(error, response, body) {
+    request({ uri : url, json : true }, function(error, response, body) {
         // console.log('Air quality for ' + airQuality + ' ' + response.statusCode + ' ' + JSON.stringify(body));
-		if (error) return callback(error);
-        var site = body.HourlyAirQualityIndex.LocalAuthority.Site;
-        site.species.forEach( function(species) {
-        	var pollution = { name : site['@SiteCode'], speciesCode : species['@SpeciesCode'], airQualityIndex : species['@AirQualityIndex'] };
-        	shouldicycle.pollution.push(pollution);
-        });
-        
-		callback();
+        if (error) return callback(error);
+        if (body && body.HourlyAirQualityIndex && body.HourlyAirQualityIndex.LocalAuthority && body.HourlyAirQualityIndex.LocalAuthority.Site && body.HourlyAirQualityIndex.LocalAuthority.Site.species) {
+            var site = body.HourlyAirQualityIndex.LocalAuthority.Site;
+            site.species.forEach(function(species) {
+                var pollution = { name: site['@SiteCode'], speciesCode: species['@SpeciesCode'], airQualityIndex: species['@AirQualityIndex'] };
+                shouldicycle.pollution.push(pollution);
+            });
+        }
+        callback();
     });
 }
 

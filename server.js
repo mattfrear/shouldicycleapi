@@ -27,7 +27,7 @@ router.get('/', function(req, res) {
 	res.json({ message: 'hooray! welcome to our cycle api!' });	
 });
 
-router.get('/cycle', function(req, res, next) {
+router.get('/v1/cycle', function(req, res, next) {
 	var location = req.query.location;
 	var airQualities = req.query.airquality;
 	var shouldicycle = {};

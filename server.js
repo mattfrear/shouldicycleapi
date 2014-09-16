@@ -72,11 +72,17 @@ function getWeather(location, shouldicycle, callback) {
         shouldicycle.temp = Math.round(body.main.temp);
         shouldicycle.symbol = body.weather[0].icon;
         shouldicycle.windDegree = Math.round(body.wind.deg);
-        shouldicycle.windDirection = "todo";
+        shouldicycle.windDirection = degToCompass(shouldicycle.windDegree);
         shouldicycle.windSpeed = Math.round(body.wind.speed);
         callback();
     });
 };
+
+function degToCompass(num) {
+    var val = Math.floor((num / 22.5) + 0.5);
+    var arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+    return arr[(val % 16)];
+}
 
 function getAirQuality(airQuality, shouldicycle, callback) {
     var url = 'http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json';

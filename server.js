@@ -64,35 +64,19 @@ router.get('/cycle', function(req, res, next) {
 });
 
 function getWeather(location, shouldicycle, callback) {
-    var url = 'http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&units=metric';
+    var url = 'http://api.openweathermap.org/data/2.5/weather?q=' + location + '&units=metric';
     request({ uri : url, json : true }, function (error, response, body) {
-        console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length);
+        // console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length);
         if (error) return callback(error);
-        shouldicycle.city = body.city.name;
-        var closestForecast = calcClosestForecast(body.list);
-        shouldicycle.temp = Math.round(closestForecast.main.temp);
-        shouldicycle.symbol = closestForecast.weather[0].icon;
-        shouldicycle.windDegree = Math.round(closestForecast.wind.deg);
+        shouldicycle.city = body.name;
+        shouldicycle.temp = Math.round(body.main.temp);
+        shouldicycle.symbol = body.weather[0].icon;
+        shouldicycle.windDegree = Math.round(body.wind.deg);
         shouldicycle.windDirection = "todo";
-        shouldicycle.windSpeed = Math.round(closestForecast.wind.speed);
-		callback();
-	});
+        shouldicycle.windSpeed = Math.round(body.wind.speed);
+        callback();
+    });
 };
-
-function calcClosestForecast(forecasts) {
-    var nowInSeconds = Math.round(Date.now() / 1000);
-    var closest = 0;
-    var closestDiff = Math.abs(nowInSeconds - forecasts[0].dt);
-    for (var i = 1; i < forecasts.length; i++) {
-        var diff = Math.abs(nowInSeconds - forecasts[i].dt);
-        if (diff < closestDiff) {
-            closest = i;
-            closestDiff = diff;
-        }
-    }
-
-    return forecasts[closest];
-}
 
 function getAirQuality(airQuality, shouldicycle, callback) {
     var url = 'http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json';

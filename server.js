@@ -6,8 +6,8 @@
 // call the packages we need
 var express    = require('express'); 		// call express
 var app        = express(); 				// define our app using express
-var request    = require('request');        // https://github.com/mikeal/request
 var async      = require('async');          // http://www.sebastianseilund.com/nodejs-async-in-practice
+var weather    = require('./weather.js');
 
 var port = process.env.PORT || 8080; 		// set our port
 
@@ -37,7 +37,7 @@ router.get('/cycle', function(req, res, next) {
 		// Get weather
 		function(callback) {
 			if (location) {
-				getWeather(location, shouldicycle, callback);
+				weather.lookupCurrentWeather(location, shouldicycle, callback);
 			}
 			else {
 				callback();
@@ -48,7 +48,7 @@ router.get('/cycle', function(req, res, next) {
 			if (airQualities) {
 				var airQualityArray = airQualities.split(',');
 			    async.forEach(airQualityArray, function(airQuality, airQualityCallback) {
-			        getAirQuality(airQuality, shouldicycle, airQualityCallback);
+			        weather.lookupAirQuality(airQuality, shouldicycle, airQualityCallback);
 			    }, callback);
 			}
 			else {
@@ -62,44 +62,6 @@ router.get('/cycle', function(req, res, next) {
 		res.json(shouldicycle);	
 	});
 });
-
-function getWeather(location, shouldicycle, callback) {
-    var url = 'http://api.openweathermap.org/data/2.5/weather?q=' + location + '&units=metric';
-    request({ uri : url, json : true }, function (error, response, body) {
-        // console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length);
-        if (error) return callback(error);
-        shouldicycle.city = body.name;
-        shouldicycle.temp = Math.round(body.main.temp);
-        shouldicycle.symbol = body.weather[0].icon;
-        shouldicycle.windDegree = Math.round(body.wind.deg);
-        shouldicycle.windDirection = degToCompass(shouldicycle.windDegree);
-        shouldicycle.windSpeed = Math.round(body.wind.speed);
-        callback();
-    });
-};
-
-function degToCompass(num) {
-    var val = Math.floor((num / 22.5) + 0.5);
-    var arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
-    return arr[(val % 16)];
-}
-
-function getAirQuality(airQuality, shouldicycle, callback) {
-    var url = 'http://api.erg.kcl.ac.uk/AirQuality/Hourly/MonitoringIndex/SiteCode=' + airQuality.toUpperCase() + '/Json';
-
-    request({ uri : url, json : true }, function(error, response, body) {
-        // console.log('Air quality for ' + airQuality + ' ' + response.statusCode + ' ' + JSON.stringify(body));
-        if (error) return callback(error);
-        if (body && body.HourlyAirQualityIndex && body.HourlyAirQualityIndex.LocalAuthority && body.HourlyAirQualityIndex.LocalAuthority.Site && body.HourlyAirQualityIndex.LocalAuthority.Site.species) {
-            var site = body.HourlyAirQualityIndex.LocalAuthority.Site;
-            site.species.forEach(function(species) {
-                var pollution = { name: site['@SiteCode'], speciesCode: species['@SpeciesCode'], airQualityIndex: species['@AirQualityIndex'] };
-                shouldicycle.pollution.push(pollution);
-            });
-        }
-        callback();
-    });
-}
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api

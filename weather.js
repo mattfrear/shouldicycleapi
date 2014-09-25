@@ -10,7 +10,7 @@ module.exports = {
         request({ uri : url, json : true }, function (error, response, body) {
             // console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length);
             if (error) return callback(error);
-            shouldicycle.city = body.name;
+            shouldicycle.city = body.name + ', ' + body.sys.country;
             shouldicycle.temp = Math.round(body.main.temp);
             shouldicycle.symbol = body.weather[0].icon;
             shouldicycle.windDegree = Math.round(body.wind.deg);

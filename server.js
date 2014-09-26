@@ -58,7 +58,7 @@ router.get('/v1/cycle', function(req, res, next) {
     ], 
     // This is called when weather and airquality are done
     function(err) {
-        if (err) return next(err);
+        if (err) return next(res.status(err.code).json(err));
         res.json(shouldicycle);	
     });
 });

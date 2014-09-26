@@ -10,13 +10,16 @@ module.exports = {
         request({ uri : url, json : true }, function (error, response, body) {
             // console.log('Weather for ' + location + ' ' + response.statusCode + ' ' + body.length);
             if (error) return callback(error);
+            if (body.cod !== 200) {
+                return callback({ code: parseInt(body.cod, 10), message: body.message });
+            }
             shouldicycle.city = body.name + ', ' + body.sys.country;
             shouldicycle.temp = Math.round(body.main.temp);
             shouldicycle.symbol = body.weather[0].icon;
             shouldicycle.windDegree = Math.round(body.wind.deg);
             shouldicycle.windDirection = degToCompass(shouldicycle.windDegree);
             shouldicycle.windSpeed = Math.round(body.wind.speed);
-            callback();
+            return callback();
         });
     },
 
@@ -26,14 +29,16 @@ module.exports = {
         request({ uri : url, json : true }, function (error, response, body) {
             // console.log('Air quality for ' + airQuality + ' ' + response.statusCode + ' ' + JSON.stringify(body));
             if (error) return callback(error);
-            if (body && body.HourlyAirQualityIndex && body.HourlyAirQualityIndex.LocalAuthority && body.HourlyAirQualityIndex.LocalAuthority.Site && body.HourlyAirQualityIndex.LocalAuthority.Site.species) {
+            if (!body) return callback({ code: 404, message: "Pollution " + airQuality + " not found." });
+
+            if (body.HourlyAirQualityIndex && body.HourlyAirQualityIndex.LocalAuthority && body.HourlyAirQualityIndex.LocalAuthority.Site && body.HourlyAirQualityIndex.LocalAuthority.Site.species) {
                 var site = body.HourlyAirQualityIndex.LocalAuthority.Site;
-                site.species.forEach(function (species) {
+                site.species.forEach(function(species) {
                     var pollution = { name: site['@SiteCode'], speciesCode: species['@SpeciesCode'], airQualityIndex: species['@AirQualityIndex'] };
                     shouldicycle.pollution.push(pollution);
                 });
             }
-            callback();
+            return callback();
         });
     }
 }
